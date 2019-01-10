@@ -1,0 +1,29 @@
+sudo: required
+
+services:
+  - docker
+
+branches:
+  only:
+    - master
+    - /^v\d+/
+
+script:
+  - |
+    if [ "$TRAVIS_BRANCH" == "master" ]; then
+      docker build . -t jumperfly/ansible:master-${TRAVIS_COMMIT:0:7}
+    fi
+  - |
+    if [[ "$TRAVIS_BRANCH" =~ ^v[0-9] ]]; then
+      docker pull jumperfly/ansible:master-${TRAVIS_COMMIT:0:7}
+      docker tag jumperfly/ansible:master-${TRAVIS_COMMIT:0:7} jumperfly/ansible:$TRAVIS_BRANCH
+    fi
+after_script:
+  - |
+    if [ "$TRAVIS_BRANCH" == "master" ]; then
+      DOCKER_TAG=$TRAVIS_BRANCH-${TRAVIS_COMMIT:0:7}
+    else
+      DOCKER_TAG=$TRAVIS_BRANCH
+    fi
+  - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
+  - docker push jumperfly/ansible:$DOCKER_TAG
